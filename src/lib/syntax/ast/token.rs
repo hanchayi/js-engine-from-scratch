@@ -1,7 +1,7 @@
 use std::fmt::{Display, Result, Formatter};
 
 use super::keyword::Keyword;
-use super::punctuator::Punctuator;
+use super::punc::Punctuator;
 use super::pos::Position;
 
 #[derive(Clone, PartialEq)]

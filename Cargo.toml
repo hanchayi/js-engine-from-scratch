@@ -12,6 +12,6 @@ edition = "2021"
 name = "js"
 path = "src/lib/lib.rs"
 
-[[bin]]
-name = "js"
-path = "src/bin/bin.rs"
+# [[bin]]
+# name = "js"
+# path = "src/bin/bin.rs"
