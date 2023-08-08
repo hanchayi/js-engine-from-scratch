@@ -195,6 +195,7 @@ impl<'a> Lexer<'a> {
                     }
                     self.push_token(TokenData::StringLiteral(buf))
                 },
+                // 匹配16进制数字
                 '0' => {
                     let mut buf = String::new();
                     let num = if self.next_is('x')? {
@@ -223,16 +224,12 @@ impl<'a> Lexer<'a> {
                                 _ => break,
                             }
                         }
-                        // if gone_decimal {
-                        //     from_str(&buf)
-                        // } else {
-                        //     u64::from_str_radix(&buf, 8)
-                        // }
                         u64::from_str_radix(&buf, 8).unwrap()
 
                     };
                     self.push_token(TokenData::NumericLiteral(num as f64))
                 },
+                // 匹配数字字面量
                 _ if ch.is_digit(10) => {
                     let mut buf = ch.to_string();
                     loop {
@@ -250,6 +247,7 @@ impl<'a> Lexer<'a> {
                     // TODO make this a bit more safe -------------------------------VVVV
                     self.push_token(TokenData::NumericLiteral(f64::from_str(&buf).unwrap()))
                 }
+                // 匹配字面量和关键字和标志符
                 _ if ch.is_alphabetic() || ch == '$' || ch == '_' => {
                     let mut buf = ch.to_string();
                     loop {
@@ -263,7 +261,7 @@ impl<'a> Lexer<'a> {
                             }
                         }
                     }
-                    // Match won't compare &String to &str so i need to convert it :(
+
                     let buf_compare: &str = &buf;
                     self.push_token(match buf_compare {
                         "true" => TokenData::BooleanLiteral(true),
@@ -286,14 +284,14 @@ impl<'a> Lexer<'a> {
                 '[' => self.push_punc(Punctuator::OpenBracket),
                 ']' => self.push_punc(Punctuator::CloseBracket),
                 '?' => self.push_punc(Punctuator::Question),
-                // 注释
                 '/' => {
                     let token = match self.preview_next()? {
-                        // Matched comment
+                        // //注释
                         '/' => {
                             let comment = self.read_line()?;
                             TokenData::Comment(comment)
                         }
+                        // /* */注释
                         '*' => {
                             let mut buf = String::new();
                             loop {
@@ -310,6 +308,7 @@ impl<'a> Lexer<'a> {
                             }
                             TokenData::Comment(buf)
                         }
+                        // /= 计算
                         '=' => TokenData::Punctuator(Punctuator::AssignDiv),
                         _ => TokenData::Punctuator(Punctuator::Div),
                     };
