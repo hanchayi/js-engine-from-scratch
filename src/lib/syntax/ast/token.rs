@@ -5,33 +5,45 @@ use super::punc::Punctuator;
 use super::pos::Position;
 
 #[derive(Clone, PartialEq)]
+/// js中一个Token
 pub struct Token {
     pub data: TokenData,
     pub pos: Position,
 }
 
+impl Token {
+    /// 通过tokenData和行列号创建Token
+    pub fn new(data: TokenData, line_number: u64, column_number: u64) -> Token {
+        Token {
+            data: data,
+            pos: Position::new(line_number, column_number),
+        }
+    }
+}
+
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar
 #[derive(Clone, PartialEq)]
+/// 代表不同类型的Token
 pub enum TokenData {
-    /// A boolean literal, which is either `true` or `false`
+    /// 布尔值
     TBooleanLiteral(bool),
-    /// The end of the file
+    /// 文件结尾
     TEOF,
-    /// An identifier
+    /// 标志符
     TIdentifier(String),
-    /// A keyword
+    /// 关键词
     TKeyword(Keyword),
-    /// A `null` literal
+    /// null
     TNullLiteral,
-    /// A numeric literal
+    /// 数字
     TNumericLiteral(f64),
-    /// A piece of punctuation
+    /// 标点符号
     TPunctuator(Punctuator),
-    /// A string literal
+    /// 字符串
     TStringLiteral(String),
-    /// A regular expression
+    /// 正则
     TRegularExpression(String),
-    /// A comment
+    /// 注释
     TComment(String),
 }
 

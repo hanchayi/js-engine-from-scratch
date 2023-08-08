@@ -1,14 +1,14 @@
 #[derive(Clone, PartialEq)]
-// A position in Javascript source code
+// js中的代码位置
 pub struct Position {
-    // Column number
+    // 行号
     pub column_number: u64,
-    // Line number
+    // 列号
     pub line_number: u64,
 }
 
 impl Position {
-    // Create a new position
+    // 创建一个代码位置
     pub fn new(line_number: u64, column_number: u64) -> Position {
         Position {
             line_number: line_number,
