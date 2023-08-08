@@ -26,40 +26,40 @@ impl Token {
 /// 代表不同类型的Token
 pub enum TokenData {
     /// 布尔值
-    TBooleanLiteral(bool),
+    BooleanLiteral(bool),
     /// 文件结尾
-    TEOF,
+    EOF,
     /// 标志符
-    TIdentifier(String),
+    Identifier(String),
     /// 关键词
-    TKeyword(Keyword),
+    Keyword(Keyword),
     /// null
-    TNullLiteral,
+    NullLiteral,
     /// 数字
-    TNumericLiteral(f64),
+    NumericLiteral(f64),
     /// 标点符号
-    TPunctuator(Punctuator),
+    Punctuator(Punctuator),
     /// 字符串
-    TStringLiteral(String),
+    StringLiteral(String),
     /// 正则
-    TRegularExpression(String),
+    RegularExpression(String),
     /// 注释
-    TComment(String),
+    Comment(String),
 }
 
 impl Display for TokenData {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self.clone() {
-            TokenData::TBooleanLiteral(val) => write!(f, "{}", val),
-            TokenData::TEOF => write!(f, "end of file"),
-            TokenData::TIdentifier(iden) => write!(f, "{}", iden),
-            TokenData::TKeyword(keyword) => write!(f, "{:?}", keyword),
-            TokenData::TNullLiteral => write!(f, "null"),
-            TokenData::TNumericLiteral(num) => write!(f, "{}", num),
-            TokenData::TPunctuator(punctuator) => write!(f, "{:?}", punctuator),
-            TokenData::TStringLiteral(str) => write!(f, "{}", str),
-            TokenData::TRegularExpression(regex) => write!(f, "{}", regex),
-            TokenData::TComment(comment) => write!(f, "{}", comment),
+            TokenData::BooleanLiteral(val) => write!(f, "{}", val),
+            TokenData::EOF => write!(f, "end of file"),
+            TokenData::Identifier(iden) => write!(f, "{}", iden),
+            TokenData::Keyword(keyword) => write!(f, "{:?}", keyword),
+            TokenData::NullLiteral => write!(f, "null"),
+            TokenData::NumericLiteral(num) => write!(f, "{}", num),
+            TokenData::Punctuator(punctuator) => write!(f, "{:?}", punctuator),
+            TokenData::StringLiteral(str) => write!(f, "{}", str),
+            TokenData::RegularExpression(regex) => write!(f, "{}", regex),
+            TokenData::Comment(comment) => write!(f, "{}", comment),
         }
     }
 }
