@@ -1,82 +1,99 @@
-use std::{str::FromStr, fmt::{Display, Formatter, Error}};
+use std::str::FromStr;
+use std::fmt::{Display, Formatter, Error};
+use std::error;
 use super::keyword::Keyword::*;
 
 /**
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#keywords
  */
-
  #[derive(Clone, PartialEq, Debug)]
- /// A Javascript Keyword
+ /// 关键词枚举
 pub enum Keyword {
-    /// The `break` keyword
+    /// 关键词break
     KBreak,
-    /// The `case` keyword
+    /// 关键词case
     KCase,
-    /// The `catch` keyword
+    /// 关键词catch
     KCatch,
-    /// The `class` keyword, which is reserved for future use
+    /// 关键词class, which is reserved for future use
     KClass,
-    /// The `continue` keyword
+    /// 关键词continue
     KContinue,
-    /// The `debugger` keyword
+    /// 关键词debugger
     KDebugger,
-    /// The `default` keyword
+    /// 关键词default
     KDefault,
-    /// The `delete` keyword
+    /// 关键词delete
     KDelete,
-    /// The `do` keyword
+    /// 关键词do
     KDo,
-    /// The `else` keyword
+    /// 关键词else
     KElse,
-    /// The `enum` keyword
+    /// 关键词enum
     KEnum,
-    /// The `extends` keyword
+    /// 关键词extends
     KExtends,
-    /// The `finally` keyword
+    /// 关键词finally
     KFinally,
-    /// The `for` keyword
+    /// 关键词for
     KFor,
-    /// The `function` keyword
+    /// 关键词function
     KFunction,
-    /// The `if` keyword
+    /// 关键词if
     KIf,
-    /// The `in` keyword
+    /// 关键词in
     KIn,
-    /// The `instanceof` keyword
+    /// 关键词instanceof
     KInstanceOf,
-    /// The `import` keyword
+    /// 关键词import
     KImport,
-    /// The `new` keyword
+    /// 关键词new
     KNew,
-    /// The `return` keyword
+    /// 关键词return
     KReturn,
-    /// The `super` keyword
+    /// 关键词super
     KSuper,
-    /// The `switch` keyword
+    /// 关键词switch
     KSwitch,
-    /// The `this` keyword
+    /// 关键词this
     KThis,
-    /// The `throw` keyword
+    /// 关键词throw
     KThrow,
-    /// The `try` keyword
+    /// 关键词try
     KTry,
-    /// The `typeof` keyword
+    /// 关键词typeof
     KTypeOf,
-    /// The `var` keyword
+    /// 关键词var
     KVar,
-    /// The `void` keyword
+    /// 关键词void
     KVoid,
-    /// The `while` keyword
+    /// 关键词while
     KWhile,
-    /// The `with` keyword
+    /// 关键词with
     KWith,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct ParseKeywordError;
+#[derive(Debug, Clone)]
+pub struct TokenError;
+impl Display for TokenError {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(f, "invalid token")
+    }
+}
+
+// 为了其它Error来wrap它
+impl error::Error for TokenError {
+    fn description(&self) -> &str {
+        "invalid token"
+    }
+
+    fn cause(&self) -> Option<&dyn error::Error> {
+        None
+    }
+}
 
 impl FromStr for Keyword {
-    type Err = ParseKeywordError;
+    type Err = TokenError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "break" => Ok(KBreak),
@@ -110,14 +127,14 @@ impl FromStr for Keyword {
             "void" => Ok(KVoid),
             "while" => Ok(KWhile),
             "with" => Ok(KWith),
-            _ => Err(ParseKeywordError),
+            _ => Err(TokenError),
         }
     }
 
 }
 
 impl Display for Keyword {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(
             f,
             "{}",
@@ -153,7 +170,6 @@ impl Display for Keyword {
                 KVoid => "void",
                 KWhile => "while",
                 KWith => "with",
-                // _ => Err(std::fmt::Error)
             }
         )
     }
