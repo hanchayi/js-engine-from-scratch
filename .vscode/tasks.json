@@ -10,7 +10,7 @@
             "args": [
                 "run",
                 "--bin",
-                "js"
+                "bin"
             ],
             "problemMatcher": [
                 "$rustc"
