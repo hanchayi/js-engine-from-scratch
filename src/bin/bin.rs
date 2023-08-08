@@ -4,7 +4,5 @@ use js::syntax::lexer::Lexer;
 fn main() {
     let buffer = read_to_string("tests/helloworld.js").unwrap();
     let mut lexer = Lexer::new(&buffer);
-    let res = lexer.lex().unwrap();
-
-    println!("{:?}", res)
+    lexer.lex().expect("finished")
 }

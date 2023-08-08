@@ -3,6 +3,53 @@ use std::str::FromStr;
 use std::str::Chars;
 use super::ast::{token::{Token, TokenData}, punc::Punctuator};
 
+#[allow(unused)]
+macro_rules! vop {
+    ($this:ident, $assign_op:expr, $op:expr) => ({
+        let preview = $this.preview_next()?;
+        match preview {
+            '=' => {
+                $this.next()?;
+                $assign_op
+            }
+            _ => $op,
+        }
+    });
+    ($this:ident, $assign_op:expr, $op:expr, {$($case:pat => $block:expr), +}) => ({
+        let preview = $this.preview_next()?;
+        match preview {
+            '=' => {
+                $this.next()?;
+                $assign_op
+            },
+            $($case => $block)+,
+            _ => $op
+        }
+    });
+    ($this:ident, $op:expr, {$($case:pat => $block:expr),+}) => {
+        let preview = $this.preview_next()?;
+        match preview {
+            $($case => $block) +,
+            _ => $op
+        }
+    }
+}
+
+macro_rules! op {
+    ($this:ident, $assign_op:expr, $op:expr) => ({
+        let punc = vop!($this, $assign_op, $op);
+        $this.push_punc(punc);
+    });
+    ($this:ident, $assign_op:expr, $op:expr, {$($case:pat => $block:expr),+}) => ({
+        let punc = vop!($this, $assign_op, $op, {$($case => $block),+});
+        $this.push_punc(punc);
+    });
+    ($this:ident, $op:expr, {$($case:pat => $block:expr),+}) => ({
+        let punc = vop!($this, $op, {$($case => $block),+});
+        $this.push_punc();
+    });
+}
+
 #[derive(Debug, Clone)]
 pub struct  LexerError {
     details: String,
@@ -64,10 +111,15 @@ impl<'a> Lexer<'a> {
 
     pub fn lex(&mut self) -> Result<(), LexerError> {
         loop {
-            let ch = match self.next() {
-                Ok(ch) => ch,
-                Err(lexer_error) => return Err(lexer_error)
-            };
+            match self.preview_next() {
+                Ok(_) => (),
+                Err(LexerError { details }) => {
+                    if details == "finished" {
+                        return Ok(())
+                    }
+                },
+            }
+            let ch = self.next()?;
 
             match ch {
                 // 字符串
@@ -232,6 +284,7 @@ impl<'a> Lexer<'a> {
                 '[' => self.push_punc(Punctuator::OpenBracket),
                 ']' => self.push_punc(Punctuator::CloseBracket),
                 '?' => self.push_punc(Punctuator::Question),
+                // 注释
                 '/' => {
                     let token = match self.preview_next()? {
                         // Matched comment
@@ -260,6 +313,50 @@ impl<'a> Lexer<'a> {
                     };
                     self.push_token(token)
                 }
+                '*' => op!(self, Punctuator::AssignMul, Punctuator::Mul),
+                '+' => op!(self, Punctuator::AssignAdd, Punctuator::Add, {
+                    '+' => Punctuator::Inc
+                }),
+                '-' => op!(self, Punctuator::AssignSub, Punctuator::AssignSub, {
+                    '+' => Punctuator::Inc
+                }),
+                '%' => op!(self, Punctuator::AssignMod, Punctuator::Mod),
+                '|' => op!(self, Punctuator::AssignOr, Punctuator::Or, {
+                    '|' => Punctuator::BoolOr
+                }),
+                '&' => op!(self, Punctuator::AssignAnd, Punctuator::And, {
+                    '&' => Punctuator::BoolAnd
+                }),
+                '^' => op!(self, Punctuator::AssignXor, Punctuator::Xor),
+                '=' => op!(self, if self.next_is('=')? {
+                    Punctuator::StrictEq
+                } else {
+                    Punctuator::Eq
+                }, Punctuator::Assign, {
+                    '>' => Punctuator::Arrow
+                }),
+                '<' => op!(self, Punctuator::LessThanOrEq, Punctuator::LessThan, {
+                    '<' => vop!(self, Punctuator::AssignLeftSh, Punctuator::LeftSh)
+                }),
+                '>' => op!(self, Punctuator::GreaterThanOrEq, Punctuator::GreaterThan, {
+                    '>' => vop!(self, Punctuator::AssignRightSh, Punctuator::RightSh, {
+                        '>' => vop!(self, Punctuator::AssignURightSh, Punctuator::URightSh)
+                    })
+                }),
+                '!' => op!(
+                    self,
+                    vop!(self, Punctuator::StrictNotEq, Punctuator::NotEq),
+                    Punctuator::Not
+                ),
+                '~' => self.push_punc(Punctuator::Neg),
+                '\n' | '\u{2028}' | '\u{2029}' => {
+                    self.line_number += 1;
+                    self.column_number = 0;
+                }
+                '\r' => {
+                    self.column_number = 0;
+                }
+                ' ' => (),
                 ch => panic!(
                     "{}:{}: Unexpected '{}'",
                     self.line_number, self.column_number, ch
@@ -269,13 +366,16 @@ impl<'a> Lexer<'a> {
     }
 
     fn next(&mut self) -> Result<char, LexerError>{
-        self.buffer.next().ok_or(LexerError::new("next failed"))
+        match self.buffer.next() {
+            Some(char) => Ok(char),
+            None => Err(LexerError::new("finished")),
+        }
     }
 
     fn preview_next(&mut self) -> Result<char, LexerError> {
         match self.buffer.peek() {
             Some(v) => Ok(*v),
-            None => Err(LexerError::new("uidhi")),
+            None => Err(LexerError::new("finished")),
         }
     }
 
