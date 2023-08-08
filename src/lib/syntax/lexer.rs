@@ -113,9 +113,11 @@ impl<'a> Lexer<'a> {
         loop {
             match self.preview_next() {
                 Ok(_) => (),
-                Err(LexerError { details }) => {
-                    if details == "finished" {
+                Err(e) => {
+                    if e.details == "finished" {
                         return Ok(())
+                    } else {
+                        return Err(e)
                     }
                 },
             }

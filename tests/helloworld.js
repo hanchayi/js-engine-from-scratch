@@ -1,1 +1,1 @@
-'hello world'
+let a = (2 * 2)

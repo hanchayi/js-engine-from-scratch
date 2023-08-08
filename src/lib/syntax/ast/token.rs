@@ -1,10 +1,11 @@
-use std::fmt::{Display, Result, Formatter};
+use std::fmt::{Debug, Display, Result, Formatter};
 
 use super::keyword::Keyword;
 use super::punc::Punctuator;
 use super::pos::Position;
 
 #[derive(Clone, PartialEq)]
+#[derive(Debug)]
 /// js中一个Token
 pub struct Token {
     pub data: TokenData,
@@ -21,8 +22,26 @@ impl Token {
     }
 }
 
+impl Display for Token {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}", self.data)
+    }
+}
+
+pub struct VecToken(Vec<Token>);
+
+impl Debug for VecToken {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        let mut buffer = String::new();
+        for token in &self.0 {
+            buffer.push_str(&token.to_string());
+        }
+        write!(f, "{}", buffer)
+    }
+}
+
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 /// 代表不同类型的Token
 pub enum TokenData {
     /// 布尔值

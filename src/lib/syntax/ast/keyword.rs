@@ -10,67 +10,69 @@ use super::keyword::Keyword::*;
  /// 关键词枚举
 pub enum Keyword {
     /// 关键词break
-    KBreak,
+    Break,
     /// 关键词case
-    KCase,
+    Case,
     /// 关键词catch
-    KCatch,
+    Catch,
     /// 关键词class, which is reserved for future use
-    KClass,
+    Class,
     /// 关键词continue
-    KContinue,
+    Continue,
     /// 关键词debugger
-    KDebugger,
+    Debugger,
     /// 关键词default
-    KDefault,
+    Default,
     /// 关键词delete
-    KDelete,
+    Delete,
     /// 关键词do
-    KDo,
+    Do,
     /// 关键词else
-    KElse,
+    Else,
     /// 关键词enum
-    KEnum,
+    Enum,
     /// 关键词extends
-    KExtends,
+    Extends,
     /// 关键词finally
-    KFinally,
+    Finally,
     /// 关键词for
-    KFor,
+    For,
     /// 关键词function
-    KFunction,
+    Function,
     /// 关键词if
-    KIf,
+    If,
     /// 关键词in
-    KIn,
+    In,
     /// 关键词instanceof
-    KInstanceOf,
+    InstanceOf,
     /// 关键词import
-    KImport,
+    Import,
     /// 关键词new
-    KNew,
+    New,
     /// 关键词return
-    KReturn,
+    Return,
     /// 关键词super
-    KSuper,
+    Super,
     /// 关键词switch
-    KSwitch,
+    Switch,
     /// 关键词this
-    KThis,
+    This,
     /// 关键词throw
-    KThrow,
+    Throw,
     /// 关键词try
-    KTry,
+    Try,
     /// 关键词typeof
-    KTypeOf,
+    TypeOf,
     /// 关键词var
-    KVar,
+    Var,
+    /// 关键词let
+    Let,
     /// 关键词void
-    KVoid,
+    Void,
     /// 关键词while
-    KWhile,
+    While,
     /// 关键词with
-    KWith,
+    With,
 }
 
 #[derive(Debug, Clone)]
@@ -96,38 +98,39 @@ impl FromStr for Keyword {
     type Err = KeywordError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "break" => Ok(KBreak),
-            "case" => Ok(KCase),
-            "catch" => Ok(KCatch),
-            "class" => Ok(KClass),
-            "continue" => Ok(KContinue),
-            "debugger" => Ok(KDebugger),
-            "default" => Ok(KDefault),
-            "delete" => Ok(KDelete),
-            "do" => Ok(KDo),
-            "else" => Ok(KElse),
-            "enum" => Ok(KEnum),
-            "extends" => Ok(KExtends),
-            "finally" => Ok(KFinally),
-            "for" => Ok(KFor),
-            "function" => Ok(KFunction),
-            "if" => Ok(KIf),
-            "in" => Ok(KIn),
-            "instanceof" => Ok(KInstanceOf),
-            "import" => Ok(KImport),
-            "new" => Ok(KNew),
-            "return" => Ok(KReturn),
-            "super" => Ok(KSuper),
-            "switch" => Ok(KSwitch),
-            "this" => Ok(KThis),
-            "throw" => Ok(KThrow),
-            "try" => Ok(KTry),
-            "typeof" => Ok(KTypeOf),
-            "var" => Ok(KVar),
-            "void" => Ok(KVoid),
-            "while" => Ok(KWhile),
-            "with" => Ok(KWith),
-            _ => Err(KeywordError),
+            "break" =>      Ok(Break),
+            "case" =>       Ok(Case),
+            "catch" =>      Ok(Catch),
+            "class" =>      Ok(Class),
+            "continue" =>   Ok(Continue),
+            "debugger" =>   Ok(Debugger),
+            "default" =>    Ok(Default),
+            "delete" =>     Ok(Delete),
+            "do" =>         Ok(Do),
+            "else" =>       Ok(Else),
+            "enum" =>       Ok(Enum),
+            "extends" =>    Ok(Extends),
+            "finally" =>    Ok(Finally),
+            "for" =>        Ok(For),
+            "function" =>   Ok(Function),
+            "if" =>         Ok(If),
+            "in" =>         Ok(In),
+            "instanceof" => Ok(InstanceOf),
+            "import" =>     Ok(Import),
+            "new" =>        Ok(New),
+            "return" =>     Ok(Return),
+            "super" =>      Ok(Super),
+            "switch" =>     Ok(Switch),
+            "this" =>       Ok(This),
+            "throw" =>      Ok(Throw),
+            "try" =>        Ok(Try),
+            "typeof" =>     Ok(TypeOf),
+            "var" =>        Ok(Var),
+            "let" =>        Ok(Let),
+            "void" =>       Ok(Void),
+            "while" =>      Ok(While),
+            "with" =>       Ok(With),
+            _ =>            Err(KeywordError),
         }
     }
 
@@ -139,37 +142,38 @@ impl Display for Keyword {
             f,
             "{}",
             match *self {
-                KBreak => "break",
-                KCase => "case",
-                KCatch => "catch",
-                KClass => "class",
-                KContinue => "continue",
-                KDebugger => "debugger",
-                KDefault => "default",
-                KDelete => "delete",
-                KDo => "do",
-                KElse => "else",
-                KEnum => "enum",
-                KExtends => "extends",
-                KFinally => "finally",
-                KFor => "for",
-                KFunction => "function",
-                KIf => "if",
-                KIn => "in",
-                KInstanceOf => "instanceof",
-                KImport => "import",
-                KNew => "new",
-                KReturn => "return",
-                KSuper => "super",
-                KSwitch => "switch",
-                KThis => "this",
-                KThrow => "throw",
-                KTry => "try",
-                KTypeOf => "typeof",
-                KVar => "var",
-                KVoid => "void",
-                KWhile => "while",
-                KWith => "with",
+                Break => "break",
+                Case => "case",
+                Catch => "catch",
+                Class => "class",
+                Continue => "continue",
+                Debugger => "debugger",
+                Default => "default",
+                Delete => "delete",
+                Do => "do",
+                Else => "else",
+                Enum => "enum",
+                Extends => "extends",
+                Finally => "finally",
+                For => "for",
+                Function => "function",
+                If => "if",
+                In => "in",
+                InstanceOf => "instanceof",
+                Import => "import",
+                New => "new",
+                Return => "return",
+                Super => "super",
+                Switch => "switch",
+                This => "this",
+                Throw => "throw",
+                Try => "try",
+                TypeOf => "typeof",
+                Var => "var",
+                Void => "void",
+                While => "while",
+                With => "with",
+                Let => "let",
             }
         )
     }
