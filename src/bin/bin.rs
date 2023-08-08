@@ -3,6 +3,6 @@ use js::syntax::lexer::Lexer;
 
 fn main() {
     let buffer = read_to_string("tests/helloworld.js").unwrap();
-    let lexer = Lexer::new(buffer);
+    let mut lexer = Lexer::new(&buffer);
     lexer.lex();
 }
