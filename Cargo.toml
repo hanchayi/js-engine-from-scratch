@@ -7,8 +7,9 @@ edition = "2021"
 exclude = [".vscode/*", "Dockerfile", "Makefile", ".editorConfig"]
 
 [dependencies]
-
+gc = "0.3.2"
+gc_derive = "*"
 
 [lib]
-name = "js"
+name = "engine"
 path = "src/lib/lib.rs"
