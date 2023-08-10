@@ -5,7 +5,6 @@ use super::ast::op::{BinOp, BitOp, CompOp, LogOp, NumOp, Operator, UnaryOp};
 use super::ast::constant::Const;
 use super::ast::punc::Punctuator;
 use super::ast::expr::{Expr, ExprDef};
-use super::ast::pos::Position;
 
 #[derive(Debug, Clone)]
 pub enum ParseError {
@@ -29,11 +28,11 @@ pub struct Parser {
 macro_rules! mk (
     ($this:expr, $def:expr) => {
         {
-            Expr::new($def, $this.get_token($this.pos)?.pos, $this.get_token($this.pos)?.pos)
+            Expr::new($def)
         }
     };
     ($this:expr, $def:expr, $first:expr) => {
-        Expr::new($def, $first.pos, $this.get_token($this.pos)?.pos)
+        Expr::new($def)
     };
 );
 
@@ -51,8 +50,6 @@ impl Parser {
         Ok(
             Expr::new(
                 ExprDef::BlockExpr(exprs),
-                Position::new(1, 1),
-                Position::new(1, 1)
             )
         )
     }
@@ -119,7 +116,7 @@ impl Parser {
                         }
                     }
                 }
-                Ok(Expr::new(ExprDef::VarDeclExpr(vars), Position::new(1, 16), Position::new(1, 16)))
+                Ok(Expr::new(ExprDef::VarDeclExpr(vars)))
             }
             Keyword::Return => Ok(mk!(
                 self,

@@ -1,20 +1,16 @@
 use std::{fmt::{Display, Formatter, Result}, collections::BTreeMap};
 
-use super::{pos::Position, op::{BinOp, UnaryOp, Operator}, constant::Const};
+use super::{ op::{BinOp, UnaryOp, Operator}, constant::Const};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Expr {
  pub def: ExprDef,
- pub start: Position,
- pub end: Position,
 }
 
 impl Expr {
-    pub fn new(def: ExprDef, start: Position, end: Position) -> Expr {
+    pub fn new(def: ExprDef) -> Expr {
         Expr {
             def: def,
-            start,
-            end,
         }
     }
 }
