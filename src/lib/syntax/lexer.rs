@@ -121,6 +121,8 @@ impl<'a> Lexer<'a> {
                     }
                 },
             }
+
+            self.column_number += 1;
             let ch = self.next()?;
 
             match ch {
@@ -193,7 +195,9 @@ impl<'a> Lexer<'a> {
                             ch => buf.push(ch),
                         }
                     }
-                    self.push_token(TokenData::StringLiteral(buf))
+                    let str_length = buf.len() as u64;
+                    self.push_token(TokenData::StringLiteral(buf));
+                    self.column_number += str_length + 1;
                 },
                 // 匹配16进制数字
                 '0' => {
@@ -272,6 +276,7 @@ impl<'a> Lexer<'a> {
                             Err(_) => TokenData::Identifier(buf.clone()),
                         },
                     });
+                    self.column_number += (buf_compare.len() - 1) as u64;
                 }
                 ';' => self.push_punc(Punctuator::Semicolon),
                 ':' => self.push_punc(Punctuator::Colon),
