@@ -1,4 +1,3 @@
-use gc::Gc;
 use super::value::Value;
 use std::collections::HashMap;
 pub static PROTOTYPE: &'static str = "prototype";
@@ -6,7 +5,11 @@ pub static INSTANCE_PROTOTYPE: &'static str = "__proto__";
 
 pub type ObjectData = HashMap<String, Property>;
 
-/// A Javascript Property
+
+/// A Javascript Property AKA The Property Descriptor
+/// [[SPEC] - The Property Descriptor Specification Type](https://tc39.github.io/ecma262/#sec-property-descriptor-specification-type)   
+/// [[SPEC] - Default Attribute Values](https://tc39.github.io/ecma262/#table-4)
+#[derive(Trace, Finalize, Clone, Debug)]
 pub struct Property {
     /// If the type of this can be changed and this can be deleted
     pub configurable: bool,
@@ -16,22 +19,31 @@ pub struct Property {
     pub writable: bool,
     /// The value associated with the property
     pub value: Value,
-    /// The function serving as getter
     pub get: Value,
-    /// The function serving as setter
     pub set: Value,
 }
 
 impl Property {
     /// Make a new property with the given value
-    pub fn new(value: Value) -> Property {
+    pub fn new() -> Property {
+        Property {
+            configurable: false,
+            enumerable: false,
+            writable: false,
+            value: Value::undefined(),
+            get: Value::undefined(),
+            set: Value::undefined(),
+        }
+    }
+
+    pub fn from_value(value: Value) -> Property {
         Property {
             configurable: false,
             enumerable: false,
             writable: false,
             value: value,
-            // get: Gc::new(VUndefined),
-            // set: Gc::new(VUndefined),
+            get: Value::undefined(),
+            set: Value::undefined(),
         }
     }
 }
