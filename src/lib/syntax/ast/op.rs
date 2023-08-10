@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum NumOp {
     // +
     Add,
@@ -27,7 +27,7 @@ impl Display for NumOp {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum UnaryOp {
     /// a++
     IncrementPost,
@@ -61,7 +61,7 @@ impl Display for UnaryOp {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum BitOp {
     /// `a & b`
     And,
@@ -91,7 +91,7 @@ impl Display for BitOp {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum CompOp {
     /// `a == b`
     Equal,
@@ -130,7 +130,7 @@ impl Display for CompOp {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum LogOp {
     /// `a && b`
     And,
@@ -152,7 +152,7 @@ impl Display for LogOp {
 }
 
 /// 二元操作符
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum BinOp {
     Num(NumOp),
     Bit(BitOp),

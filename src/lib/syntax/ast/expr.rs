@@ -1,8 +1,8 @@
 use std::{fmt::{Display, Formatter, Result}, collections::BTreeMap};
 
-use super::{pos::Position, op::{BinOp, UnaryOp, Operator}, constant::Constant};
+use super::{pos::Position, op::{BinOp, UnaryOp, Operator}, constant::Const};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct Expr {
  pub def: ExprDef,
  pub start: Position,
@@ -25,7 +25,7 @@ impl Display for Expr {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Debug, Clone)]
 /// Javascript表达式定义
 pub enum ExprDef {
     // 二元计算
@@ -33,7 +33,7 @@ pub enum ExprDef {
     // 一元操作
     UnaryOpExpr(UnaryOp, Box<Expr>),
     // 常量值
-    ConstExpr(Constant),
+    ConstExpr(Const),
     // new aa(...)
     ConstructExpr(Box<Expr>, Vec<Expr>),
     // {....}

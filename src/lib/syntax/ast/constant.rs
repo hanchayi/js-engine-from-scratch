@@ -4,27 +4,27 @@ use std::fmt::Display;
 // Debug -> :?  Display -> {}
 #[derive(PartialEq, Debug, Clone)]
 /// Javascript 常量
-pub enum Constant {
+pub enum Const {
     String(String),
     Num(f64),
     Int(i32),
     RegExp(String, bool, bool),
-    Boalean(bool),
+    Bool(bool),
     Null,
     Undefined,
 }
 
-impl Display for Constant {
+impl Display for Const {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         return match *self {
             // ref是借用没有移动
-            Constant::String(ref s) => write!(f, "\"{}\"", s),
-            Constant::Num(n) => write!(f, "{}", n),
-            Constant::Int(i) => write!(f, "{}", i),
-            Constant::RegExp(ref reg, _, _) => write!(f, "{}", reg),
-            Constant::Boalean(b) => write!(f, "{}", b),
-            Constant::Null => write!(f, "null"),
-            Constant::Undefined => write!(f, "undefined"),
+            Const::String(ref s) => write!(f, "\"{}\"", s),
+            Const::Num(n) => write!(f, "{}", n),
+            Const::Int(i) => write!(f, "{}", i),
+            Const::RegExp(ref reg, _, _) => write!(f, "{}", reg),
+            Const::Bool(b) => write!(f, "{}", b),
+            Const::Null => write!(f, "null"),
+            Const::Undefined => write!(f, "undefined"),
         }
     }
 }
