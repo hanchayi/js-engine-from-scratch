@@ -9,3 +9,4 @@ extern crate gc_derive;
 pub mod syntax;
 pub mod exec;
 pub mod js;
+pub mod engine;
