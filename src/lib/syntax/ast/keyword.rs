@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::fmt::{Display, Formatter, Error};
 use std::error;
-use super::keyword::Keyword::*;
+use crate::syntax::ast::keyword::Keyword::*;
 
 /**
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#keywords

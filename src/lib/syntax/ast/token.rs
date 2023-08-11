@@ -1,8 +1,7 @@
 use std::fmt::{Debug, Display, Result, Formatter};
-
-use super::keyword::Keyword;
-use super::punc::Punctuator;
-use super::pos::Position;
+use crate::syntax::ast::keyword::Keyword;
+use crate::syntax::ast::pos::Position;
+use crate::syntax::ast::punc::Punctuator;
 
 #[derive(Clone, PartialEq)]
 #[derive(Debug)]

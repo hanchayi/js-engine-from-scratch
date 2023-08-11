@@ -1,6 +1,6 @@
 use std::{fmt::{Display, Formatter, Result}, collections::BTreeMap};
-
-use super::{ op::{BinOp, UnaryOp, Operator}, constant::Const};
+use crate::syntax::ast::constant::Const;
+use crate::syntax::ast::op::{BinOp, Operator, UnaryOp};
 
 #[derive(Clone, Trace, Finalize, Debug, PartialEq)]
 pub struct Expr {

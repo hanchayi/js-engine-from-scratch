@@ -1,7 +1,7 @@
-use super::function::NativeFunctionData;
-use super::value::{from_value, to_value, ResultValue, Value, ValueData};
 use rand::random;
 use std::f64;
+use crate::js::function::NativeFunctionData;
+use crate::js::value::{from_value, to_value, ResultValue, Value, ValueData};
 
 /// Get the absolute value of a number
 pub fn abs(_: Value, _: Value, args: Vec<Value>) -> ResultValue {

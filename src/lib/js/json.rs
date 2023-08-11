@@ -1,8 +1,8 @@
 /// The JSON Object
 /// https://tc39.github.io/ecma262/#sec-json-object
-use super::function::NativeFunctionData;
-use super::value::{to_value, ResultValue, Value, ValueData};
 use serde_json::{self, to_string_pretty, Value as JSONValue};
+use crate::js::function::NativeFunctionData;
+use crate::js::value::{to_value, ResultValue, Value, ValueData};
 
 /// Parse a JSON string into a Javascript object
 /// https://tc39.github.io/ecma262/#sec-json.parse

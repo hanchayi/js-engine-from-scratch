@@ -1,7 +1,8 @@
 use std::{iter::Peekable, fmt::Display, error, char::from_u32};
 use std::str::FromStr;
 use std::str::Chars;
-use super::ast::{token::{Token, TokenData}, punc::Punctuator};
+use crate::syntax::ast::punc::Punctuator;
+use crate::syntax::ast::token::{Token, TokenData};
 
 #[allow(unused)]
 macro_rules! vop {

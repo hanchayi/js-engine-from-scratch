@@ -1,6 +1,6 @@
 use gc::Gc;
-use super::function::NativeFunctionData;
-use super::value::{to_value, ResultValue, Value, ValueData};
+use crate::js::function::NativeFunctionData;
+use crate::js::value::{to_value, ResultValue, Value, ValueData};
 
 /// Create a new array
 pub fn make_array(this: Value, _: Value, _: Vec<Value>) -> ResultValue {

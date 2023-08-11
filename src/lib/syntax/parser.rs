@@ -1,10 +1,10 @@
 use std::collections::btree_map::BTreeMap;
-use super::ast::token::{Token, TokenData};
-use super::ast::keyword::Keyword;
-use super::ast::op::{BinOp, BitOp, CompOp, LogOp, NumOp, Operator, UnaryOp};
-use super::ast::constant::Const;
-use super::ast::punc::Punctuator;
-use super::ast::expr::{Expr, ExprDef};
+use crate::syntax::ast::constant::Const;
+use crate::syntax::ast::expr::{Expr, ExprDef};
+use crate::syntax::ast::keyword::Keyword;
+use crate::syntax::ast::op::{BinOp, BitOp, CompOp, LogOp, NumOp, Operator, UnaryOp};
+use crate::syntax::ast::punc::Punctuator;
+use crate::syntax::ast::token::{Token, TokenData};
 
 #[derive(Debug, Clone)]
 pub enum ParseError {

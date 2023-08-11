@@ -1,7 +1,7 @@
 use gc::Gc;
-use super::function::NativeFunctionData;
-use super::object::PROTOTYPE;
-use super::value::{to_value, ResultValue, Value, ValueData};
+use crate::js::function::NativeFunctionData;
+use crate::js::object::PROTOTYPE;
+use crate::js::value::{to_value, ResultValue, Value, ValueData};
 
 /// Create a new error
 pub fn make_error(this: Value, _: Value, args: Vec<Value>) -> ResultValue {

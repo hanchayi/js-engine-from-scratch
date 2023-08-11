@@ -1,8 +1,10 @@
 use gc::Gc;
-use super::function::NativeFunctionData;
-use super::value::{from_value, to_value, ResultValue, Value, ValueData};
 use std::iter::FromIterator;
 use time::{now, strftime};
+
+use crate::js::function::NativeFunctionData;
+use crate::js::value::{from_value, to_value, ResultValue, Value, ValueData};
+
 /// Print a javascript value to the standard output stream
 pub fn log(_: Value, _: Value, args: Vec<Value>) -> ResultValue {
     let args: Vec<String> = FromIterator::from_iter(

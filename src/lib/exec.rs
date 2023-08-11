@@ -1,13 +1,13 @@
 use gc::{Gc, GcCell};
-use super::js::function::{Function, RegularFunction};
-use super::js::object::{INSTANCE_PROTOTYPE, PROTOTYPE};
-use super::js::value::{from_value, to_value, ResultValue, Value, ValueData};
-use super::js::{array, console, function, json, math, object, string};
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use super::syntax::ast::constant::Const;
-use super::syntax::ast::expr::{Expr, ExprDef};
-use super::syntax::ast::op::{BinOp, BitOp, CompOp, LogOp, NumOp, UnaryOp};
+use crate::syntax::ast::constant::Const;
+use crate::syntax::ast::expr::{Expr, ExprDef};
+use crate::syntax::ast::op::{BinOp, BitOp, CompOp, LogOp, NumOp, UnaryOp};
+use crate::js::function::{Function, RegularFunction};
+use crate::js::object::{INSTANCE_PROTOTYPE, PROTOTYPE};
+use crate::js::value::{from_value, to_value, ResultValue, Value, ValueData};
+use crate::js::{array, console, function, json, math, object, string};
 #[derive(Trace, Finalize, Clone, Debug)]
 /// A variable scope
 pub struct Scope {
@@ -114,7 +114,7 @@ impl Executor for Interpreter {
                     let vars = scope.vars.clone();
                     let vars_ptr = &vars;
                     match *vars_ptr.clone() {
-                        ValueData::Object(ref obj) => match obj.borrow().get(name) {
+                        ValueData::Object(ref obj, _) => match obj.borrow().get(name) {
                             Some(v) => {
                                 val = v.value.clone();
                                 break;
@@ -330,7 +330,11 @@ impl Executor for Interpreter {
                 for arg in args.iter() {
                     v_args.push(self.run(arg)?);
                 }
-                let this = Gc::new(ValueData::Object(GcCell::new(HashMap::new())));
+                let this = Gc::new(ValueData::Object(
+                    GcCell::new(HashMap::new()),
+                    GcCell::new(HashMap::new()),
+                ));
+                // Create a blank object, then set its __proto__ property to the [Constructor].prototype
                 (&this)
                     .set_field_slice(INSTANCE_PROTOTYPE, (&func).get_field_slice(PROTOTYPE));
                 match *func {
@@ -393,7 +397,7 @@ impl Executor for Interpreter {
                 let val = self.run(val_e)?;
                 Ok(to_value(match *val {
                     ValueData::Undefined => "undefined",
-                    ValueData::Null | ValueData::Object(_) => "object",
+                    ValueData::Null | ValueData::Object(_, _) => "object",
                     ValueData::Boolean(_) => "boolean",
                     ValueData::Number(_) | ValueData::Integer(_) => "number",
                     ValueData::String(_) => "string",

@@ -1,6 +1,4 @@
 use gc::{Gc, GcCell};
-use super::function::{Function, NativeFunction, NativeFunctionData};
-use super::object::{ObjectData, Property, INSTANCE_PROTOTYPE, PROTOTYPE};
 use serde_json::map::Map;
 use serde_json::Number as JSONNumber;
 use serde_json::Value as JSONValue;
@@ -13,6 +11,8 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Not, Rem, Shl, Shr, Sub};
 use std::str::FromStr;
+use crate::js::function::{Function, NativeFunction, NativeFunctionData};
+use crate::js::object::{ObjectData, Property, INSTANCE_PROTOTYPE, PROTOTYPE};
 
 #[must_use]
 /// The result of a Javascript expression is represented like this so it can succeed (`Ok`) or fail (`Err`)
@@ -36,7 +36,8 @@ pub enum ValueData {
     /// `Number` - A 32-bit integer, such as `42`
     Integer(i32),
     /// `Object` - An object, such as `Math`, represented by a binary tree of string keys to Javascript values
-    Object(GcCell<ObjectData>),
+    /// The second object storage is optional for now
+    Object(GcCell<ObjectData>, GcCell<ObjectData>),
     /// `Function` - A runnable block of code, such as `Math.sqrt`, which can take some variables and return a useful value or act upon an object
     Function(GcCell<Function>),
 }
@@ -45,6 +46,7 @@ impl ValueData {
     /// Returns a new empty object
     pub fn new_obj(global: Option<Value>) -> Value {
         let mut obj: ObjectData = HashMap::new();
+        let mut private_obj: ObjectData = HashMap::new();
         if global.is_some() {
             let obj_proto = global
                 .unwrap()
@@ -52,19 +54,26 @@ impl ValueData {
                 .get_field_slice(PROTOTYPE);
             obj.insert(INSTANCE_PROTOTYPE.to_string(), Property::new(obj_proto));
         }
-        Gc::new(ValueData::Object(GcCell::new(obj)))
+        Gc::new(ValueData::Object(
+            GcCell::new(obj),
+            GcCell::new(private_obj),
+        ))
     }
 
     pub fn new_obj_from_prototype(proto: Value) -> Value {
         let mut obj: ObjectData = HashMap::new();
+        let mut private_obj: ObjectData = HashMap::new();
         obj.insert(INSTANCE_PROTOTYPE.to_string(), Property::new(proto));
-        Gc::new(ValueData::Object(GcCell::new(obj)))
+        Gc::new(ValueData::Object(
+            GcCell::new(obj),
+            GcCell::new(private_obj),
+        ))
     }
 
     /// Returns true if the value is an object
     pub fn is_object(&self) -> bool {
         match *self {
-            ValueData::Object(_) => true,
+            ValueData::Object(_, _) => true,
             _ => false,
         }
     }
@@ -113,7 +122,7 @@ impl ValueData {
     /// [toBoolean](https://tc39.github.io/ecma262/#sec-toboolean)
     pub fn is_true(&self) -> bool {
         match *self {
-            ValueData::Object(_) => true,
+            ValueData::Object(_, _) => true,
             ValueData::String(ref s) if !s.is_empty() => true,
             ValueData::Number(n) if n >= 1.0 && n % 1.0 == 0.0 => true,
             ValueData::Integer(n) if n > 1 => true,
@@ -125,7 +134,7 @@ impl ValueData {
     /// Converts the value into a 64-bit floating point number
     pub fn to_num(&self) -> f64 {
         match *self {
-            ValueData::Object(_) | ValueData::Undefined | ValueData::Function(_) => NAN,
+            ValueData::Object(_, _) | ValueData::Undefined | ValueData::Function(_) => NAN,
             ValueData::String(ref str) => match FromStr::from_str(str) {
                 Ok(num) => num,
                 Err(_) => NAN,
@@ -140,7 +149,7 @@ impl ValueData {
     /// Converts the value into a 32-bit integer
     pub fn to_int(&self) -> i32 {
         match *self {
-            ValueData::Object(_)
+            ValueData::Object(_, _)
             | ValueData::Undefined
             | ValueData::Null
             | ValueData::Boolean(false)
@@ -162,31 +171,86 @@ impl ValueData {
         // Spidermonkey has its own GetLengthProperty: https://searchfox.org/mozilla-central/source/js/src/vm/Interpreter-inl.h#154
         // TODO: Maybe we need a GetLengthProperty for value types
         if let ValueData::String(ref s) = *self {
-            return Some(Property::new(to_value(s.len() as f64)))
+            return Some(Property::new(to_value(s.len() as i32)));
         }
 
         let obj: ObjectData = match *self {
-            ValueData::Object(ref obj) => {
+            ValueData::Object(ref obj, _) => {
                 let hash = obj.clone();
                 hash.into_inner()
             }
             // Accesing .object on borrow() seems to automatically dereference it, so we don't need the *
-            // ValueData::Function(ref func) => func.clone().object,
+            ValueData::Function(ref func) => match func.clone().into_inner() {
+                Function::NativeFunc(ref func) => func.object.clone(),
+                Function::RegularFunc(ref func) => func.object.clone(),
+            }
             _ => return None,
         };
         match obj.get(&field) {
             Some(val) => Some(val.clone()),
-            None => match obj.get(&PROTOTYPE.to_string()) {
+            None => match obj.get(&INSTANCE_PROTOTYPE.to_string()) {
                 Some(prop) => prop.value.get_prop(field),
                 None => None,
             },
         }
     }
 
+    /// Resolve the property in the object
+    /// Returns a copy of the Property
+    pub fn get_private_prop(&self, field: String) -> Option<Property> {
+        let obj: ObjectData = match *self {
+            ValueData::Object(_, ref obj) => {
+                let hash = obj.clone();
+                hash.into_inner()
+            }
+            _ => return None,
+        };
+
+        match obj.get(&field) {
+            Some(val) => Some(val.clone()),
+            None => match obj.get(&INSTANCE_PROTOTYPE.to_string()) {
+                Some(prop) => prop.value.get_prop(field),
+                None => None,
+            },
+        }
+    }
+
+    pub fn get_private_field(&self, field: String) -> Value {
+        match self.get_private_prop(field) {
+            Some(prop) => prop.value.clone(),
+            None => Gc::new(ValueData::Undefined),
+        }
+    }
+
     /// Resolve the property in the object and get its value, or undefined if this is not an object or the field doesn't exist
     pub fn get_field(&self, field: String) -> Value {
         match self.get_prop(field) {
-            Some(prop) => prop.value.clone(),
+            Some(prop) => {
+                // If the Property has [[Get]] set to a function, we should run that and return the Value
+                let prop_getter = match *prop.get {
+                    ValueData::Function(ref v) => match *v.borrow() {
+                        Function::NativeFunc(ref ntv) => {
+                            let func = ntv.data;
+                            Some(
+                                func(
+                                    Gc::new(self.clone()),
+                                    Gc::new(self.clone()),
+                                    vec![Gc::new(self.clone())],
+                                )
+                                .unwrap(),
+                            )
+                        }
+                        _ => None,
+                    },
+                    _ => None,
+                };
+
+                // If the getter is populated, use that. If not use [[Value]] instead
+                match prop_getter {
+                    Some(val) => val,
+                    None => prop.value.clone(),
+                }
+            }
             None => Gc::new(ValueData::Undefined),
         }
     }
@@ -196,10 +260,26 @@ impl ValueData {
         self.get_field(field.to_string())
     }
 
+    pub fn set_private_field(&self, field: String, val: Value) -> Value {
+        match *self {
+            ValueData::Object(_, ref obj) => {
+                obj.borrow_mut()
+                    .insert(field.clone(), Property::new(val.clone()));
+            }
+            _ => (),
+        }
+        val
+    }
+
+    /// Set the private field in the value
+    pub fn set_private_field_slice<'a>(&self, field: &'a str, val: Value) -> Value {
+        self.set_private_field(field.to_string(), val)
+    }
+
     /// Set the field in the value
     pub fn set_field(&self, field: String, val: Value) -> Value {
         match *self {
-            ValueData::Object(ref obj) => {
+            ValueData::Object(ref obj, _) => {
                 obj.borrow_mut()
                     .insert(field.clone(), Property::new(val.clone()));
             }
@@ -226,7 +306,7 @@ impl ValueData {
     /// Set the property in the value
     pub fn set_prop(&self, field: String, prop: Property) -> Property {
         match *self {
-            ValueData::Object(ref obj) => {
+            ValueData::Object(ref obj, _) => {
                 obj.borrow_mut().insert(field.clone(), prop.clone());
             }
             ValueData::Function(ref func) => {
@@ -255,6 +335,7 @@ impl ValueData {
             JSONValue::Bool(v) => ValueData::Boolean(v),
             JSONValue::Array(vs) => {
                 let mut i = 0;
+                let mut private_data: ObjectData = HashMap::new();
                 let mut data: ObjectData = FromIterator::from_iter(vs.iter().map(|json| {
                     i += 1;
                     (
@@ -266,14 +347,15 @@ impl ValueData {
                     "length".to_string(),
                     Property::new(to_value(vs.len() as i32)),
                 );
-                ValueData::Object(GcCell::new(data))
+                ValueData::Object(GcCell::new(data), GcCell::new(private_data))
             }
             JSONValue::Object(obj) => {
+                let mut private_data: ObjectData = HashMap::new();
                 let data: ObjectData = FromIterator::from_iter(
                     obj.iter()
                         .map(|(key, json)| (key.clone(), Property::new(to_value(json.clone())))),
                 );
-                ValueData::Object(GcCell::new(data))
+                ValueData::Object(GcCell::new(data), GcCell::new(private_data))
             }
             JSONValue::Null => ValueData::Null,
         }
@@ -283,7 +365,7 @@ impl ValueData {
         match *self {
             ValueData::Null | ValueData::Undefined => JSONValue::Null,
             ValueData::Boolean(b) => JSONValue::Bool(b),
-            ValueData::Object(ref obj) => {
+            ValueData::Object(ref obj, _) => {
                 let mut nobj = Map::new();
                 for (k, v) in obj.borrow().iter() {
                     if k != INSTANCE_PROTOTYPE {
@@ -329,7 +411,7 @@ impl Display for ValueData {
                     _ => v.to_string(),
                 }
             ),
-            ValueData::Object(ref v) => {
+            ValueData::Object(ref v, _) => {
                 write!(f, "{}", "{")?;
                 match v.borrow().iter().last() {
                     Some((last_key, _)) => {
@@ -561,14 +643,18 @@ impl<T: FromValue> FromValue for Vec<T> {
 
 impl ToValue for ObjectData {
     fn to_value(&self) -> Value {
-        Gc::new(ValueData::Object(GcCell::new(self.clone())))
+        let mut private_obj: ObjectData = HashMap::new();
+        Gc::new(ValueData::Object(
+            GcCell::new(self.clone()),
+            GcCell::new(private_obj),
+        ))
     }
 }
 
 impl FromValue for ObjectData {
     fn from_value(v: Value) -> Result<ObjectData, &'static str> {
         match *v {
-            ValueData::Object(ref obj) => Ok(obj.clone().into_inner()),
+            ValueData::Object(ref obj, _) => Ok(obj.clone().into_inner()),
             ValueData::Function(ref func) => Ok(match *func.borrow().deref() {
                 Function::NativeFunc(ref data) => data.object.clone(),
                 Function::RegularFunc(ref data) => data.object.clone(),

@@ -1,8 +1,8 @@
 use gc::Gc;
-use super::object::{ObjectData, Property};
-use super::value::{to_value, ResultValue, Value, ValueData};
 use std::collections::HashMap;
-use super::super::syntax::ast::expr::Expr;
+use crate::syntax::ast::expr::Expr;
+use crate::js::object::{ObjectData, Property};
+use crate::js::value::{to_value, ResultValue, Value, ValueData};
 
 pub type NativeFunctionData = fn(Value, Value, Vec<Value>) -> ResultValue;
 /// A Javascript function
