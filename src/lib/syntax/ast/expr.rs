@@ -34,23 +34,37 @@ pub enum ExprDef {
     ConstructExpr(Box<Expr>, Vec<Expr>),
     // {....}
     BlockExpr(Vec<Expr>),
+    /// 本地变量
     LocalExpr(String),
+    /// 获取属性 a.xx
     GetConstFieldExpr(Box<Expr>, String),
+    /// 获取属性 a['']
     GetFieldExpr(Box<Expr>, Box<Expr>),
-    // a.fun(....)
+    /// 函数调用
     CallExpr(Box<Expr>, Vec<Expr>),
+    /// while
     WhileLoopExpr(Box<Expr>, Box<Expr>),
+    /// if
     IfExpr(Box<Expr>, Box<Expr>, Option<Box<Expr>>),
+    /// switch
     SwitchExpr(Box<Expr>, Vec<(Expr, Vec<Expr>)>, Option<Box<Expr>>),
-    // {a: {}}
+    // 对象声明{a: {}}
     ObjectDeclExpr(Box<BTreeMap<String, Expr>>),
+    /// 数组声明
     ArrayDeclExpr(Vec<Expr>),
+    /// 函数声明
     FunctionDeclExpr(Option<String>, Vec<String>, Box<Expr>),
+    /// 箭头函数
     ArrowFunctionDeclExpr(Vec<String>, Box<Expr>),
+    /// return
     ReturnExpr(Option<Box<Expr>>),
+    /// throw
     ThrowExpr(Box<Expr>),
+    /// 赋值
     AssignExpr(Box<Expr>, Box<Expr>),
+    /// 变量声明
     VarDeclExpr(Vec<(String, Option<Expr>)>),
+    /// typeof
     TypeOfExpr(Box<Expr>),
 }
 
