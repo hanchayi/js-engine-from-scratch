@@ -2,7 +2,7 @@ use std::{fmt::{Display, Formatter, Result}, collections::BTreeMap};
 
 use super::{ op::{BinOp, UnaryOp, Operator}, constant::Const};
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Clone, Trace, Finalize, Debug, PartialEq)]
 pub struct Expr {
  pub def: ExprDef,
 }
@@ -21,7 +21,7 @@ impl Display for Expr {
     }
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 /// Javascript表达式定义
 pub enum ExprDef {
     // 二元计算

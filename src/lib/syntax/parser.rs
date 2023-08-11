@@ -47,11 +47,8 @@ impl Parser {
             let result = self.parse()?;
             exprs.push(result);
         }
-        Ok(
-            Expr::new(
-                ExprDef::BlockExpr(exprs),
-            )
-        )
+
+        Ok(Expr::new(ExprDef::BlockExpr(exprs)))
     }
 
     fn get_token(&self, pos: usize) -> Result<Token, ParseError> {
@@ -328,7 +325,7 @@ impl Parser {
                                 // at this point it's probably gonna be an arrow function
                                 let mut args = vec![
                                     match next.def {
-                                        ExprDef::LocalExpr(name) => name,
+                                        ExprDef::LocalExpr(ref name) => (*name).clone(),
                                         _ => "".to_string(),
                                     },
                                     match self.get_token(self.pos)?.data {
@@ -613,7 +610,7 @@ impl Parser {
                 self.pos += 1;
                 let mut args = Vec::with_capacity(1);
                 match result.def {
-                    ExprDef::LocalExpr(name) => args.push(name),
+                    ExprDef::LocalExpr(ref name) => args.push((*name).clone()),
                     _ => return Err(ParseError::ExpectedExpr("identifier", result)),
                 }
                 let next = self.parse()?;

@@ -7,3 +7,5 @@ pub mod array;
 pub mod console;
 pub mod json;
 pub mod error;
+pub mod math;
+pub mod string;

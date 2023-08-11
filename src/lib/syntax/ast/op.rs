@@ -1,47 +1,64 @@
 use std::fmt::{Display, Formatter, Result};
 
-
-#[derive(Clone, PartialEq, Debug)]
-pub enum NumOp {
-    // +
-    Add,
-    // -
-    Sub,
-    // /
-    Div,
-    // *
-    Mul,
-    // %
-    Mod
-}
-
-impl Display for NumOp {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result {
-        match *self {
-            NumOp::Add => write!(f, "+"),
-            NumOp::Sub => write!(f, "-"),
-            NumOp::Div => write!(f, "/"),
-            NumOp::Mul => write!(f, "*"),
-            NumOp::Mod => write!(f, "%"),
-        }
+/// Represents an operator
+pub trait Operator {
+    /// Get the associativity as a boolean that is true if it goes rightwards
+    fn get_assoc(&self) -> bool;
+    /// Get the precedence as an unsigned integer, where the lower it is, the more precedence/priority it has
+    fn get_precedence(&self) -> u64;
+    /// Get the precedence and associativity of this operator
+    fn get_precedence_and_assoc(&self) -> (u64, bool) {
+        (self.get_precedence(), self.get_assoc())
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+/// A numeric operation between 2 values
+pub enum NumOp {
+    /// `a + b` - Addition
+    Add,
+    /// `a - b` - Subtraction
+    Sub,
+    /// `a / b` - Division
+    Div,
+    /// `a * b` - Multiplication
+    Mul,
+    /// `a % b` - Modulus
+    Mod,
+}
+
+impl Display for NumOp {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                NumOp::Add => "+",
+                NumOp::Sub => "-",
+                NumOp::Div => "/",
+                NumOp::Mul => "*",
+                NumOp::Mod => "%",
+            }
+        )
+    }
+}
+
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+/// A unary operation on a single value
 pub enum UnaryOp {
-    /// a++
+    /// `a++` - increment the value
     IncrementPost,
-    /// ++a
+    /// `++a` - increment the value
     IncrementPre,
-    /// a--
+    /// `a--` - decrement the value
     DecrementPost,
-    /// --a
+    /// `--a` - decrement the value
     DecrementPre,
-    /// -a
+    /// `-a` - negate the value
     Minus,
-    /// +a
+    /// `+a` - convert to a number
     Plus,
-    /// !a
+    /// `!a` - get the opposite of the boolean value
     Not,
 }
 
@@ -61,17 +78,18 @@ impl Display for UnaryOp {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+/// A bitwise operation between 2 values
 pub enum BitOp {
-    /// `a & b`
+    /// `a & b` - Bitwise and
     And,
-    /// `a | b`
+    /// `a | b` - Bitwise or
     Or,
-    /// `a ^ b`
+    /// `a ^ b` - Bitwise xor
     Xor,
-    /// `a << b`
+    /// `a << b` - Bit-shift leftwards
     Shl,
-    /// `a >> b`
+    /// `a >> b` - Bit-shift rightrights
     Shr,
 }
 
@@ -91,23 +109,24 @@ impl Display for BitOp {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+/// A comparitive operation between 2 values
 pub enum CompOp {
-    /// `a == b`
+    /// `a == b` - Equality
     Equal,
-    /// `a != b`
+    /// `a != b` - Unequality
     NotEqual,
-    /// `a === b`
+    /// `a === b` - Strict equality
     StrictEqual,
-    /// `a !== b`
+    /// `a !== b` - Strict unequality
     StrictNotEqual,
-    /// `a > b`
+    /// `a > b` - If `a` is greater than `b`
     GreaterThan,
-    /// `a >= b`
+    /// `a >= b` - If `a` is greater than or equal to `b`
     GreaterThanOrEqual,
-    /// `a < b`
+    /// `a < b` - If `a` is less than `b`
     LessThan,
-    /// `a <= b`
+    /// `a <= b` - If `a` is less than or equal to `b`
     LessThanOrEqual,
 }
 
@@ -130,11 +149,12 @@ impl Display for CompOp {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+/// A logical operation between 2 boolean values
 pub enum LogOp {
-    /// `a && b`
+    /// `a && b` - Logical and
     And,
-    /// `a || b`
+    /// `a || b` - Logical or
     Or,
 }
 
@@ -151,32 +171,23 @@ impl Display for LogOp {
     }
 }
 
-/// 二元操作符
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+/// A binary operation between 2 values
 pub enum BinOp {
+    /// Numeric operation
     Num(NumOp),
+    /// Bitwise operation
     Bit(BitOp),
+    /// Comparitive operation
     Comp(CompOp),
-    Log(LogOp)
-}
-
-/// 操作符
-pub trait Operator {
-    /// 结合
-    fn get_assoc(&self) -> bool;
-    /// 优先级
-    fn get_precedence(&self) -> u64;
-    /// 返回两者
-    fn get_precedence_and_assoc(&self) -> (u64, bool) {
-        (self.get_precedence(), self.get_assoc())
-    }
+    /// Logical operation
+    Log(LogOp),
 }
 
 impl Operator for BinOp {
     fn get_assoc(&self) -> bool {
         true
     }
-
     fn get_precedence(&self) -> u64 {
         match *self {
             BinOp::Num(NumOp::Mul) | BinOp::Num(NumOp::Div) | BinOp::Num(NumOp::Mod) => 5,
@@ -200,12 +211,16 @@ impl Operator for BinOp {
 }
 
 impl Display for BinOp {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", match *self {
-            BinOp::Num(ref op) => op.to_string(),
-            BinOp::Bit(ref op) => op.to_string(),
-            BinOp::Comp(ref op) => op.to_string(),
-            BinOp::Log(ref op) => op.to_string(),
-        })
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                BinOp::Num(ref op) => op.to_string(),
+                BinOp::Bit(ref op) => op.to_string(),
+                BinOp::Comp(ref op) => op.to_string(),
+                BinOp::Log(ref op) => op.to_string(),
+            }
+        )
     }
 }

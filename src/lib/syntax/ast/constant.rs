@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 // PartialEq部分相等
 // Debug -> :?  Display -> {}
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 /// Javascript 常量
 pub enum Const {
     String(String),
