@@ -31,9 +31,9 @@ checksum = "c94b8d46989f31474299e1483db243a9ed1f8a7d8508a78c91449e76e9ef6756"
 
 [[package]]
 name = "gc_derive"
-version = "0.5.0"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb6f1e0d69658b2806f60864bad1a80a9634fc0bc17f7ed55828e3b9c45bf61e"
+checksum = "52c734b94d1d53fcc70e42c83cd7c6e108c9a4f6da8e78098a7d212805e86151"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -49,7 +49,7 @@ checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
 
 [[package]]
 name = "js-engine-from-scratch"
-version = "0.1.1"
+version = "0.1.4"
 dependencies = [
  "gc",
  "gc_derive",

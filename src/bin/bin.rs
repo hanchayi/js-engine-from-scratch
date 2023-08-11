@@ -8,7 +8,6 @@ fn main() {
     lexer.lex().unwrap();
     let tokens = lexer.tokens;
     let expr = Parser::new(tokens).parse_all().unwrap();
-
     let mut engine: Interpreter = Executor::new();
     let result = engine.run(&expr);
     match result {
