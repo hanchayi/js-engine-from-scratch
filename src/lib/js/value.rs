@@ -46,7 +46,7 @@ impl ValueData {
     /// Returns a new empty object
     pub fn new_obj(global: Option<Value>) -> Value {
         let mut obj: ObjectData = HashMap::new();
-        let mut private_obj: ObjectData = HashMap::new();
+        let private_obj: ObjectData = HashMap::new();
         if global.is_some() {
             let obj_proto = global
                 .unwrap()
@@ -62,7 +62,7 @@ impl ValueData {
 
     pub fn new_obj_from_prototype(proto: Value) -> Value {
         let mut obj: ObjectData = HashMap::new();
-        let mut private_obj: ObjectData = HashMap::new();
+        let private_obj: ObjectData = HashMap::new();
         obj.insert(INSTANCE_PROTOTYPE.to_string(), Property::new(proto));
         Gc::new(ValueData::Object(
             GcCell::new(obj),
@@ -90,6 +90,14 @@ impl ValueData {
     pub fn is_null(&self) -> bool {
         match *self {
             ValueData::Null => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if the value is a function
+    pub fn is_function(&self) -> bool {
+        match *self {
+            ValueData::Function(_) => true,
             _ => false,
         }
     }
@@ -335,7 +343,7 @@ impl ValueData {
             JSONValue::Bool(v) => ValueData::Boolean(v),
             JSONValue::Array(vs) => {
                 let mut i = 0;
-                let mut private_data: ObjectData = HashMap::new();
+                let private_data: ObjectData = HashMap::new();
                 let mut data: ObjectData = FromIterator::from_iter(vs.iter().map(|json| {
                     i += 1;
                     (
@@ -350,7 +358,7 @@ impl ValueData {
                 ValueData::Object(GcCell::new(data), GcCell::new(private_data))
             }
             JSONValue::Object(obj) => {
-                let mut private_data: ObjectData = HashMap::new();
+                let private_data: ObjectData = HashMap::new();
                 let data: ObjectData = FromIterator::from_iter(
                     obj.iter()
                         .map(|(key, json)| (key.clone(), Property::new(to_value(json.clone())))),
@@ -411,7 +419,7 @@ impl Display for ValueData {
                     _ => v.to_string(),
                 }
             ),
-            ValueData::Object(ref v, _) => {
+            ValueData::Object(ref v, ref p) => {
                 write!(f, "{}", "{")?;
                 match v.borrow().iter().last() {
                     Some((last_key, _)) => {
@@ -423,7 +431,20 @@ impl Display for ValueData {
                         }
                     }
                     None => (),
-                }
+                };
+
+                // Print private properties
+                match p.borrow().iter().last() {
+                    Some((last_key, _)) => {
+                        for (key, val) in p.borrow().iter() {
+                            write!(f, "(Private) {}: {}", key, val.value.clone())?;
+                            if key != last_key {
+                                write!(f, "{}", ", ")?;
+                            }
+                        }
+                    }
+                    None => (),
+                };
                 write!(f, "{}", "}")
             }
             ValueData::Integer(v) => write!(f, "{}", v),
@@ -643,7 +664,7 @@ impl<T: FromValue> FromValue for Vec<T> {
 
 impl ToValue for ObjectData {
     fn to_value(&self) -> Value {
-        let mut private_obj: ObjectData = HashMap::new();
+        let private_obj: ObjectData = HashMap::new();
         Gc::new(ValueData::Object(
             GcCell::new(self.clone()),
             GcCell::new(private_obj),
@@ -732,4 +753,52 @@ pub fn from_value<A: FromValue>(v: Value) -> Result<A, &'static str> {
 /// A utility function that just calls ToValue::to_value
 pub fn to_value<A: ToValue>(v: A) -> Value {
     v.to_value()
+}
+
+
+impl ToValue for usize {
+    fn to_value(&self) -> Value {
+        Gc::new(ValueData::Integer(*self as i32))
+    }
+}
+impl FromValue for usize {
+    fn from_value(v: Value) -> Result<usize, &'static str> {
+        Ok(v.to_int() as usize)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn check_is_object() {
+        let val = ValueData::new_obj(None);
+        assert_eq!(val.is_object(), true);
+    }
+
+    #[test]
+    fn check_string_to_value() {
+        let s = String::from("Hello");
+        let v = s.to_value();
+        assert_eq!(v.is_string(), true);
+        assert_eq!(v.is_null(), false);
+    }
+
+    #[test]
+    fn check_undefined() {
+        let u = ValueData::Undefined;
+        assert_eq!(u.get_type(), "undefined");
+        assert_eq!(u.to_string(), "undefined");
+    }
+
+    #[test]
+    fn check_get_set_field() {
+        let obj = ValueData::new_obj(None);
+        // Create string and convert it to a Value
+        let s = String::from("bar").to_value();
+        obj.set_field_slice("foo", s);
+        assert_eq!(obj.get_field_slice("foo").to_string(), "bar");
+    }
+
 }
