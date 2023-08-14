@@ -2,6 +2,7 @@ use gc::Gc;
 use crate::js::function::NativeFunctionData;
 use crate::js::object::{Property, PROTOTYPE};
 use crate::js::value::{from_value, to_value, ResultValue, Value, ValueData};
+use std::f64::NAN; // Not a Number
 
 /// https://searchfox.org/mozilla-central/source/js/src/vm/StringObject.h#19
 pub fn make_string(this: Value, _: Value, args: Vec<Value>) -> ResultValue {
@@ -38,7 +39,7 @@ pub fn char_at(this: Value, _: Value, args: Vec<Value>) -> ResultValue {
     let length = primitive_val.chars().count();
 
     // We should return an empty string is pos is out of range
-    if pos > length || pos < 0 as usize {
+    if pos >= length || pos < 0 as usize {
         return Ok(to_value::<String>(String::new()));
     }
 
@@ -59,12 +60,37 @@ pub fn _create(global: Value) -> Value {
     proto.set_prop_slice("length", prop);
     proto.set_field_slice("toString", to_value(to_string as NativeFunctionData));
     proto.set_field_slice("charAt", to_value(char_at as NativeFunctionData));
+    proto.set_field_slice("charCodeAt", to_value(char_code_at as NativeFunctionData));
     string.set_field_slice(PROTOTYPE, proto);
     string
 }
 /// Initialise the `String` object on the global object
 pub fn init(global: Value) {
     global.set_field_slice("String", _create(global.clone()));
+}
+
+/// Get the character (UTF 16) of string
+/// https://tc39.github.io/ecma262/#sec-string.prototype.charcodeat
+pub fn char_code_at(this: Value, _: Value, args: Vec<Value>) -> ResultValue {
+    //              ^^ represents instance  ^^ represents arguments (we only care about the first one in this case)
+    // First we get it the actual string a private field stored on the object only the engine has access to.
+    // Then we convert it into a Rust String by wrapping it in from_value
+    let primitive_val: String =
+        from_value(this.get_private_field(String::from("PrimitiveValue"))).unwrap();
+
+    // Calling .len() on a string would give the wrong result, as they are bytes not the number of unicode code points
+    // Note that this is an O(N) operation (because UTF-8 is complex) while getting the number of bytes is an O(1) operation.
+    let length = primitive_val.chars().count();
+    let pos = from_value(args[0].clone()).unwrap();
+
+    if pos >= length || pos < 0 as usize {
+        return Ok(to_value(NAN));
+    }
+
+    let utf16_val = primitive_val.encode_utf16().nth(pos).unwrap();
+    // If there is no element at that index, the result is NaN
+    // TODO: We currently don't have NaN
+    Ok(to_value(utf16_val as f64))
 }
 
 #[cfg(test)]

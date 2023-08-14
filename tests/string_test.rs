@@ -25,3 +25,11 @@ fn check_char_at() {
     assert_eq!(res.to_string(), "e");
 }
 
+#[test]
+fn check_char_code_at() {
+    let script = "var a = new String(\"test\");
+    a.charCodeAt(1);".to_string();
+    let res = run_script(script);
+    assert_eq!(res.to_string(), "101");
+}
+
