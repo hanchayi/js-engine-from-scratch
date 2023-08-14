@@ -46,7 +46,7 @@ pub fn char_at(this: Value, _: Value, args: Vec<Value>) -> ResultValue {
     Ok(to_value::<char>(primitive_val.chars().nth(pos).unwrap()))
 }
 /// Create a new `String` object
-pub fn _create(global: Value) -> Value {
+pub fn _create(global: &Value) -> Value {
     let string = to_value(make_string as NativeFunctionData);
     let proto = ValueData::new_obj(Some(global));
     let prop = Property {
@@ -65,8 +65,8 @@ pub fn _create(global: Value) -> Value {
     string
 }
 /// Initialise the `String` object on the global object
-pub fn init(global: Value) {
-    global.set_field_slice("String", _create(global.clone()));
+pub fn init(global: &Value) {
+    global.set_field_slice("String", _create(global));
 }
 
 /// Get the character (UTF 16) of string
@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn check_string_constructor_is_function() {
         let global = ValueData::new_obj(None);
-        let string_constructor = _create(global);
+        let string_constructor = _create(&global);
         assert_eq!(string_constructor.is_function(), true);
     }
 

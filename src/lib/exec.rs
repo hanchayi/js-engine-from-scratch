@@ -1,5 +1,5 @@
 use gc::{Gc, GcCell};
-use std::borrow::Borrow;
+use crate::environment::lexical_environment::{new_function_environment, LexicalEnvironment};
 use std::collections::HashMap;
 use crate::syntax::ast::constant::Const;
 use crate::syntax::ast::expr::{Expr, ExprDef};
@@ -8,85 +8,39 @@ use crate::js::function::{Function, RegularFunction};
 use crate::js::object::{INSTANCE_PROTOTYPE, PROTOTYPE};
 use crate::js::value::{from_value, to_value, ResultValue, Value, ValueData};
 use crate::js::{array, console, function, json, math, object, string};
-#[derive(Trace, Finalize, Clone, Debug)]
-/// A variable scope
-pub struct Scope {
-    /// The value of `this` in the scope
-    pub this: Value,
-    /// The variables declared in the scope
-    pub vars: Value,
-}
+
 
 /// An execution engine
 pub trait Executor {
     /// Make a new execution engine
     fn new() -> Self;
-    /// Set a global variable called `name` with the value `val`
-    fn set_global(&mut self, name: String, val: Value) -> Value;
-    /// Resolve the global variable `name`
-    fn get_global(&self, name: String) -> Value;
-    /// Create a new scope and return it
-    fn make_scope(&mut self, this: Value) -> Scope;
-    /// Destroy the current scope
-    fn destroy_scope(&mut self) -> Scope;
     /// Run an expression
     fn run(&mut self, expr: &Expr) -> ResultValue;
 }
 
 /// A Javascript intepreter
 pub struct Interpreter {
-    /// An object representing the global object
-    global: Value,
-    /// The scopes
-    pub scopes: Vec<Scope>,
+    environment: LexicalEnvironment,
 }
 
 impl Interpreter {
-    #[inline(always)]
-    /// Get the current scope
-    pub fn scope(&self) -> &Scope {
-        self.scopes.get(self.scopes.len() - 1).unwrap()
-    }
 }
 
 impl Executor for Interpreter {
     fn new() -> Interpreter {
         let global = ValueData::new_obj(None);
-        object::init(global.clone());
-        console::init(global.clone());
-        math::init(global.clone());
-        array::init(global.clone());
-        function::init(global.clone());
-        json::init(global.clone());
-        string::init(global.clone());
+        let test = ValueData::new_obj(None);
+        object::init(&global);
+        console::init(&global);
+        math::init(&global);
+        array::init(&global);
+        function::init(&global);
+        json::init(&global);
+        string::init(&global);
+
         Interpreter {
-            global: global.clone(),
-            scopes: vec![Scope {
-                this: global.clone(),
-                vars: global.clone(),
-            }],
+            environment: LexicalEnvironment::new(global.clone()),
         }
-    }
-
-    fn set_global(&mut self, name: String, val: Value) -> Value {
-        (&self.global).set_field(name, val)
-    }
-
-    fn get_global(&self, name: String) -> Value {
-        (&self.global).get_field(name)
-    }
-
-    fn make_scope(&mut self, this: Value) -> Scope {
-        let scope = Scope {
-            this: this,
-            vars: ValueData::new_obj(None),
-        };
-        self.scopes.push(scope.clone());
-        scope
-    }
-
-    fn destroy_scope(&mut self) -> Scope {
-        self.scopes.pop().unwrap()
     }
 
     fn run(&mut self, expr: &Expr) -> ResultValue {
@@ -109,21 +63,7 @@ impl Executor for Interpreter {
                 Ok(obj)
             }
             ExprDef::LocalExpr(ref name) => {
-                let mut val = Gc::new(ValueData::Undefined);
-                for scope in self.scopes.iter().rev() {
-                    let vars = scope.vars.clone();
-                    let vars_ptr = &vars;
-                    match *vars_ptr.clone() {
-                        ValueData::Object(ref obj, _) => match obj.borrow().get(name) {
-                            Some(v) => {
-                                val = v.value.clone();
-                                break;
-                            }
-                            None => (),
-                        },
-                        _ => unreachable!(),
-                    }
-                }
+                let val = self.environment.get_binding_value(name.to_string());
                 Ok(val)
             }
             ExprDef::GetConstFieldExpr(ref obj, ref field) => {
@@ -149,28 +89,39 @@ impl Executor for Interpreter {
                             (&obj).get_field((&field).to_string()),
                         )
                     }
-                    _ => (self.global.clone(), self.run(&callee.clone())?),
+                    _ => (
+                        self.environment.get_global_object().unwrap(),
+                        self.run(&callee.clone())?,
+                    ),
                 };
                 let mut v_args = Vec::with_capacity(args.len());
                 for arg in args.iter() {
                     v_args.push(self.run(arg)?);
                 }
                 match *func {
-                    ValueData::Function(ref func) => match *func.borrow() {
+                    ValueData::Function(ref inner_func) => match *inner_func.borrow() {
                         Function::NativeFunc(ref ntv) => {
                             let func = ntv.data;
                             func(this, self.run(callee)?, v_args)
                         }
                         Function::RegularFunc(ref data) => {
-                            let scope = self.make_scope(this);
-                            let scope_vars_ptr = &scope.vars;
+                            let env = &mut self.environment;
+                            // New target (second argument) is only needed for constructors, just pass undefined
+                            let undefined = Gc::new(ValueData::Undefined);
+                            env.push(new_function_environment(
+                                func.clone(),
+                                undefined,
+                                Some(env.get_current_environment_ref().clone()),
+                            ));
                             for i in 0..data.args.len() {
                                 let name = data.args.get(i).unwrap();
                                 let expr = v_args.get(i).unwrap();
-                                scope_vars_ptr.set_field(name.clone(), expr.clone());
+                                self.environment.create_mutable_binding(name.clone(), false);
+                                self.environment
+                                    .initialize_binding(name.clone(), expr.to_owned());
                             }
                             let result = self.run(&data.expr);
-                            self.destroy_scope();
+                            self.environment.pop();
                             result
                         }
                     },
@@ -223,14 +174,16 @@ impl Executor for Interpreter {
                 Ok(result)
             }
             ExprDef::ObjectDeclExpr(ref map) => {
-                let obj = ValueData::new_obj(Some(self.global.clone()));
+                let global_val = &self.environment.get_global_object().unwrap();
+                let obj = ValueData::new_obj(Some(global_val));
                 for (key, val) in map.iter() {
-                    (&obj).set_field(key.clone(), self.run(val)?);
+                   (&obj).set_field(key.clone(), self.run(val)?);
                 }
                 Ok(obj)
             }
             ExprDef::ArrayDeclExpr(ref arr) => {
-                let arr_map = ValueData::new_obj(Some(self.global.clone()));
+                let global_val = &self.environment.get_global_object().unwrap();
+                let arr_map = ValueData::new_obj(Some(global_val));
                 let mut index: i32 = 0;
                 for val in arr.iter() {
                     let val = self.run(val)?;
@@ -239,7 +192,8 @@ impl Executor for Interpreter {
                 }
                 (&arr_map).set_field_slice(
                     INSTANCE_PROTOTYPE,
-                    (&self.get_global("Array".to_string()))
+                    (&(self.environment
+                        .get_binding_value("Array".to_string())))
                         .get_field_slice(PROTOTYPE),
                 );
                 (&arr_map).set_field_slice("length", to_value(index));
@@ -250,8 +204,10 @@ impl Executor for Interpreter {
                     Function::RegularFunc(RegularFunction::new(*expr.clone(), args.clone()));
                 let val = Gc::new(ValueData::Function(GcCell::new(function)));
                 if name.is_some() {
-                    (&self.global)
-                        .set_field(name.clone().unwrap(), val.clone());
+                    self.environment
+                    .create_mutable_binding(name.clone().unwrap(), false);
+                self.environment
+                    .initialize_binding(name.clone().unwrap(), val.clone())
                 }
                 Ok(val)
             }
@@ -338,21 +294,28 @@ impl Executor for Interpreter {
                 (&this)
                     .set_field_slice(INSTANCE_PROTOTYPE, (&func).get_field_slice(PROTOTYPE));
                 match *func {
-                    ValueData::Function(ref func) => match func.clone().into_inner() {
+                    ValueData::Function(ref inner_func) => match inner_func.clone().into_inner() {
                         Function::NativeFunc(ref ntv) => {
                             let func = ntv.data;
                             func(this, self.run(callee)?, v_args)
                         }
                         Function::RegularFunc(ref data) => {
-                            let scope = self.make_scope(this);
-                            let scope_vars_ptr = &scope.vars;
+                            // Create new scope
+                            let env = &mut self.environment;
+                            env.push(new_function_environment(
+                                func.clone(),
+                                this.clone(),
+                                Some(env.get_current_environment_ref().clone()),
+                            ));
+
                             for i in 0..data.args.len() {
                                 let name = data.args.get(i).unwrap();
                                 let expr = v_args.get(i).unwrap();
-                                scope_vars_ptr.set_field(name.clone(), (*expr).clone());
+                                env.create_mutable_binding(name.clone(), false);
+                                env.initialize_binding(name.clone(), expr.to_owned());
                             }
                             let result = self.run(&data.expr);
-                            self.destroy_scope();
+                            self.environment.pop();
                             result
                         }
                     },
@@ -368,9 +331,9 @@ impl Executor for Interpreter {
                 let val = self.run(val_e)?;
                 match ref_e.def {
                     ExprDef::LocalExpr(ref name) => {
-                        (&self.scope()
-                            .vars)
-                            .set_field(name.clone(), val.clone());
+                        self.environment.create_mutable_binding(name.clone(), false);
+                        self.environment
+                            .initialize_binding(name.clone(), val.clone());
                     }
                     ExprDef::GetConstFieldExpr(ref obj, ref field) => {
                         let val_obj = self.run(obj)?;
@@ -381,15 +344,14 @@ impl Executor for Interpreter {
                 Ok(val)
             }
             ExprDef::VarDeclExpr(ref vars) => {
-                let scope_vars = self.scope().vars.clone();
-                let scope_vars_ptr = &scope_vars;
                 for var in vars.iter() {
                     let (name, value) = var.clone();
                     let val = match value {
                         Some(v) => self.run(&v)?,
                         None => Gc::new(ValueData::Null),
                     };
-                    scope_vars_ptr.set_field(name.clone(), val);
+                    self.environment.create_mutable_binding(name.clone(), false);
+                    self.environment.initialize_binding(name, val);
                 }
                 Ok(Gc::new(ValueData::Undefined))
             }

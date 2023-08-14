@@ -44,7 +44,7 @@ pub enum ValueData {
 
 impl ValueData {
     /// Returns a new empty object
-    pub fn new_obj(global: Option<Value>) -> Value {
+    pub fn new_obj(global: Option<&Value>) -> Value {
         let mut obj: ObjectData = HashMap::new();
         let private_obj: ObjectData = HashMap::new();
         if global.is_some() {
@@ -58,6 +58,58 @@ impl ValueData {
             GcCell::new(obj),
             GcCell::new(private_obj),
         ))
+    }
+
+    pub fn is_extensible(&self) -> bool {
+        true
+    }
+
+    pub fn remove_prop(&self, field: &String) {
+        match *self {
+            ValueData::Object(ref obj, _) => obj.borrow_mut().deref_mut().remove(field),
+            // Accesing .object on borrow() seems to automatically dereference it, so we don't need the *
+            ValueData::Function(ref func) => match func.borrow_mut().deref_mut() {
+                Function::NativeFunc(ref mut func) => func.object.remove(field),
+                Function::RegularFunc(ref mut func) => func.object.remove(field),
+            },
+            _ => None,
+        };
+    }
+
+    pub fn update_prop(
+        &self,
+        field: String,
+        value: Option<Value>,
+        enumerable: Option<bool>,
+        writable: Option<bool>,
+        configurable: Option<bool>,
+    ) {
+        let obj: Option<ObjectData> = match self {
+            ValueData::Object(ref obj, _) => Some(obj.borrow_mut().deref_mut().clone()),
+            // Accesing .object on borrow() seems to automatically dereference it, so we don't need the *
+            ValueData::Function(ref func) => match func.borrow_mut().deref_mut() {
+                Function::NativeFunc(ref mut func) => Some(func.object.clone()),
+                Function::RegularFunc(ref mut func) => Some(func.object.clone()),
+            },
+            _ => None,
+        };
+
+        if obj.is_none() {
+            return ();
+        }
+
+        let mut hashmap = obj.unwrap();
+        // Use value, or walk up the prototype chain
+        match hashmap.get_mut(&field) {
+            Some(ref mut prop) => {
+                prop.value = value.unwrap_or(prop.value.clone());
+                prop.enumerable = enumerable.unwrap_or(prop.enumerable);
+                prop.writable = writable.unwrap_or(prop.writable);
+                prop.configurable = configurable.unwrap_or(prop.configurable);
+            }
+            // Try again with next prop up the chain
+            None => (),
+        }
     }
 
     pub fn new_obj_from_prototype(proto: Value) -> Value {
@@ -267,6 +319,14 @@ impl ValueData {
     pub fn get_field_slice<'a>(&self, field: &'a str) -> Value {
         self.get_field(field.to_string())
     }
+
+    pub fn has_field(&self, field: String) -> bool {
+        match self.get_prop(field) {
+            Some(_) => true,
+            None => false,
+        }
+    }
+
 
     pub fn set_private_field(&self, field: String, val: Value) -> Value {
         match *self {

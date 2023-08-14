@@ -14,6 +14,6 @@ pub fn _create() -> Value {
     array
 }
 /// Initialise the global object with the `Array` object
-pub fn init(global: Value) {
+pub fn init(global: &Value) {
     global.set_field_slice("Array", _create());
 }
