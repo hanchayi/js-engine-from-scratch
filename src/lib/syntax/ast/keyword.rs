@@ -19,6 +19,8 @@ pub enum Keyword {
     Class,
     /// 关键词continue
     Continue,
+    /// The `const` keyword
+    Const,
     /// 关键词debugger
     Debugger,
     /// 关键词default
@@ -103,6 +105,7 @@ impl FromStr for Keyword {
             "catch" =>      Ok(Catch),
             "class" =>      Ok(Class),
             "continue" =>   Ok(Continue),
+            "const" =>      Ok(Const),
             "debugger" =>   Ok(Debugger),
             "default" =>    Ok(Default),
             "delete" =>     Ok(Delete),
@@ -147,6 +150,7 @@ impl Display for Keyword {
                 Catch => "catch",
                 Class => "class",
                 Continue => "continue",
+                Const => "const",
                 Debugger => "debugger",
                 Default => "default",
                 Delete => "delete",

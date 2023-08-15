@@ -29,7 +29,6 @@ impl Interpreter {
 impl Executor for Interpreter {
     fn new() -> Interpreter {
         let global = ValueData::new_obj(None);
-        let test = ValueData::new_obj(None);
         object::init(&global);
         console::init(&global);
         math::init(&global);
@@ -351,6 +350,31 @@ impl Executor for Interpreter {
                         None => Gc::new(ValueData::Null),
                     };
                     self.environment.create_mutable_binding(name.clone(), false);
+                    self.environment.initialize_binding(name, val);
+                }
+                Ok(Gc::new(ValueData::Undefined))
+            }
+            ExprDef::LetDeclExpr(ref vars) => {
+                for var in vars.iter() {
+                    let (name, value) = var.clone();
+                    let val = match value {
+                        Some(v) => r#try!(self.run(&v)),
+                        None => Gc::new(ValueData::Null),
+                    };
+                    self.environment.create_mutable_binding(name.clone(), false);
+                    self.environment.initialize_binding(name, val);
+                }
+                Ok(Gc::new(ValueData::Undefined))
+            }
+            ExprDef::ConstDeclExpr(ref vars) => {
+                for var in vars.iter() {
+                    let (name, value) = var.clone();
+                    let val = match value {
+                        Some(v) => r#try!(self.run(&v)),
+                        None => Gc::new(ValueData::Null),
+                    };
+                    self.environment
+                        .create_immutable_binding(name.clone(), false);
                     self.environment.initialize_binding(name, val);
                 }
                 Ok(Gc::new(ValueData::Undefined))

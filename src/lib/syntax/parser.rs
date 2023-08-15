@@ -65,7 +65,7 @@ impl Parser {
                 let thrown = self.parse()?;
                 Ok(mk!(self, ExprDef::ThrowExpr(Box::new(thrown))))
             }
-            Keyword::Var => {
+            Keyword::Var | Keyword::Let | Keyword::Const => {
                 let mut vars = Vec::new();
                 loop {
                     let name = match self.get_token(self.pos) {
@@ -113,7 +113,12 @@ impl Parser {
                         }
                     }
                 }
-                Ok(Expr::new(ExprDef::VarDeclExpr(vars)))
+
+                match keyword {
+                    Keyword::Let => Ok(Expr::new(ExprDef::LetDeclExpr(vars))),
+                    Keyword::Const => Ok(Expr::new(ExprDef::ConstDeclExpr(vars))),
+                    _ => Ok(Expr::new(ExprDef::VarDeclExpr(vars))),
+                }
             }
             Keyword::Return => Ok(mk!(
                 self,

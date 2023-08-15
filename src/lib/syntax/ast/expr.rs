@@ -30,6 +30,8 @@ pub enum ExprDef {
     UnaryOpExpr(UnaryOp, Box<Expr>),
     // 常量值
     ConstExpr(Const),
+    ConstDeclExpr(Vec<(String, Option<Expr>)>),
+    LetDeclExpr(Vec<(String, Option<Expr>)>),
     // new aa(...)
     ConstructExpr(Box<Expr>, Vec<Expr>),
     // {....}
@@ -182,7 +184,9 @@ impl Display for ExprDef {
             ExprDef::ReturnExpr(None) => write!(f, "{}", "return"),
             ExprDef::ThrowExpr(ref ex) => write!(f, "throw {}", ex),
             ExprDef::AssignExpr(ref ref_e, ref val) => write!(f, "{} = {}", ref_e, val),
-            ExprDef::VarDeclExpr(ref vars) => {
+            ExprDef::VarDeclExpr(ref vars)
+            | ExprDef::LetDeclExpr(ref vars)
+            | ExprDef::ConstDeclExpr(ref vars) => {
                 f.write_str("var ")?;
                 for (key, val) in vars.iter() {
                     match val {

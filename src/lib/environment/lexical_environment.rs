@@ -100,6 +100,13 @@ impl LexicalEnvironment {
             .create_mutable_binding(name, deletion)
     }
 
+    pub fn create_immutable_binding(&mut self, name: String, deletion: bool) {
+        self.get_current_environment()
+            .borrow_mut()
+            .create_immutable_binding(name, deletion)
+    }
+
+
     pub fn set_mutable_binding(&mut self, name: String, value: Value, strict: bool) {
         let env = self.get_current_environment();
         env.borrow_mut().set_mutable_binding(name, value, strict);
@@ -147,6 +154,8 @@ impl LexicalEnvironment {
         Gc::new(ValueData::Undefined)
     }
 }
+
+
 
 pub fn new_declerative_environment(env: Option<Environment>) -> Environment {
     let boxed_env = Box::new(DeclerativeEnvironmentRecord {
