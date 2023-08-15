@@ -43,7 +43,7 @@ pub fn exec(src: String) {
 }
 
 #[wasm_bindgen]
-pub fn evaluate(src: &str) {
+pub fn evaluate(src: &str) -> String {
     let mut lexer = Lexer::new(&src);
     match lexer.lex() {
         Ok(_v) => (),
@@ -61,14 +61,14 @@ pub fn evaluate(src: &str) {
         }
         Err(v) => {
             log("parsing fail");
-            return;
+            return String::from("parsing failed");
         }
     }
 
     let mut engine: Interpreter = Executor::new();
     let result = engine.run(&expr);
     match result {
-        Ok(v) => log(&v.to_string()),
-        Err(v) => log("Error"),
+        Ok(v) => v.to_string(),
+        Err(v) => String::from("Error"),
     }
 }
