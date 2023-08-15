@@ -7,7 +7,7 @@ pub fn check_env() {
       console.log(a);
       return true;
     }
-    
+
     jason();".to_string();
     let res = run_script(script).to_string();
     assert_eq!(res, "true");
